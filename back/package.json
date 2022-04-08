@@ -1,0 +1,28 @@
+{
+  "name": "challenge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PatriciaSteffen/Challenge.git"
+  },
+  "author": "Patrícia Steffen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PatriciaSteffen/Challenge/issues"
+  },
+  "homepage": "https://github.com/PatriciaSteffen/Challenge#readme",
+  "dependencies": {
+    "@hapi/catbox": "^11.1.1",
+    "@hapi/catbox-memory": "^5.0.1",
+    "@hapi/hapi": "^20.2.1",
+    "@hapi/joi": "^17.1.1",
+    "fs": "^0.0.1-security",
+    "hapi": "^17.8.5",
+    "util": "^0.12.4"
+  }
+}
