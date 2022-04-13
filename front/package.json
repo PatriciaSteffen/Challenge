@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@mui/material": "^5.6.1",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^12.1.4",
     "@testing-library/user-event": "^13.5.0",
     "bulma": "^0.9.3",
+    "hapi": "^18.1.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.0",
@@ -38,6 +42,13 @@
   },
   "devDependencies": {
     "add": "^2.0.6",
-    "node-sass": "^7.0.1"
+    "body-parser": "^1.20.0",
+    "express": "^4.17.3",
+    "express-pino-logger": "^7.0.0",
+    "node-env-run": "^4.0.2",
+    "node-sass": "^7.0.1",
+    "nodemon": "^2.0.15",
+    "npm-run-all": "^4.1.5",
+    "pino-colada": "^2.2.2"
   }
 }

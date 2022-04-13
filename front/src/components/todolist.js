@@ -10,40 +10,70 @@ export default function TodoList() {
     const [value, setValue] = useState("")
 
 
-    const addTodo = (e) => {
+    async function addTodo(e) {
         e.preventDefault()
-        setTodos([...todos, {
-            "id": Date.now(),
-            "value": value, //<= value
-            "done": false
-        }])
-        setValue("") //<= clear value after submit
+        try {
+            fetch(
+                "http://localhost:5000/todos", {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: value })
+            })
+                .then((res) => res.json())
+                .then((json) => {
+                    console.log(json)
+                    setTodos(json);
+                });
+        } catch (err) {
+            console.log("Erro:" + err);
+        }
+        setValue("");
     }
 
 
     // toggleDone
     const toggleDone = (todo) => {
-        todos.map(_todo => _todo === todo ? _todo.done = !todo.done : todo)
-        setTodos([...todos])
+        try {
+            fetch(
+                "http://localhost:5000/todo/" + todo.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: todo.state === "COMPLETO" ? "INCOMPLETE" : "COMPLETO" })
+            })
+                .then((res) => res.json())
+                .then((json) => {
+                    console.log(json)
+                    setTodos(json);
+                });
+        } catch (err) {
+            console.log("Erro:" + err);
+        }
     }
     // delete
-    const deleteTodo = (todo) => {
-        const _todos = todos.filter(_todo => _todo !== todo)
-        setTodos(_todos)
+    const deleteTodo = async (todo) => {
+        fetch(
+            "http://localhost:5000/todo/" + todo.id, {
+            method: 'DELETE'
+        })
+            .then((res) => res.json())
+            .then((json) => {
+                setTodos(json);
+            });
     }
     // edit
-    const editTodo = (todo) => {
-        console.log(todo);
-        const _todos = todos.forEach(_todo => {
-            if (_todo.id === todo.id) {
-                _todo.value = 'AQUI'
-                return true
-
-                setTodos(_todos.id, _todos)
-            }
-        })
-        console.log(_todos)
-        //     setTodos(_todos)
+    const editTodo = (todo, description) => {
+        return  fetch(
+                "http://localhost:5000/todo/" + todo.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: description })
+            })
+                .then((res) => res.json())
+                .then((json) => {
+                    console.log(json)
+                    setTodos(json);
+                    return json;
+                });
     }
 
     return (
