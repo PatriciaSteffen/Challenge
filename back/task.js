@@ -1,5 +1,13 @@
 const Boom = require('boom');
+const { cache } = require('joi');
 const UUID = require("uuid");
+const server = require('./index');
+
+
+const Sqlite3 = require('sqlite3').verbose();
+const db = new Sqlite3.Database(':memory:');
+
+db.run("CREATE TABLE todo (id, state, description, dateAdde)");
 
 const Task = [{
   "id": UUID.v1(),
@@ -21,12 +29,28 @@ const Task = [{
 }
 ];
 
+function getData(sql) {
+
+  let result = [];
+  return new Promise(function (resolve, reject) {
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        rows.forEach((row) => { result.push(row) });
+        resolve(result);
+      }
+    });
+  });
+}
+
 const taskApi = {
   all: {
     // auth: false,
     handler(request, h) {
+
       try {
-        return Task;
+        return getData('SELECT * FROM todo');
 
       } catch (err) {
         Boom.badImplementation(err);
@@ -37,13 +61,24 @@ const taskApi = {
     // auth: 'jwt',
     async handler(request, h) {
       try {
-        Task.push({
-          id: UUID.v4(),
-          state: "INCOMPLETE",
-          description: request.payload.description,
-          dateAdded: Date.now()
-        });
-        return Task;
+        db.run('INSERT INTO todo VALUES (?, ?, ?, ?)',
+          [
+            UUID.v4(),
+            "INCOMPLETE",
+            request.payload.description,
+            Date.now()
+          ],
+          (err) => {
+
+            if (err) {
+              throw err;
+            }
+
+            return ({ status: 'ok' });
+          });
+
+        return getData('SELECT * FROM todo');
+
       } catch (err) {
         Boom.badImplementation(err);
       }
@@ -88,11 +123,18 @@ const taskApi = {
     // auth: 'jwt',
     async handler(request, h) {
       try {
-        objIndex = Task.findIndex((obj => obj.id == request.params.id));
+        const result = [];
+        db.run(
+          'DELETE FROM todo WHERE id = ?',
+          request.params.id,
+          function (err, result) {
+            if (err) {
+              reject(err);
+            }
+            return result
+          });
 
-        Task.splice(objIndex,1);
-
-        return Task
+        return get('SELECT * FROM todo');
 
       } catch (err) {
         Boom.badImplementation(err);
