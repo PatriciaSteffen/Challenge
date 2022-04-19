@@ -1,5 +1,5 @@
 const Boom = require('boom');
-const { cache } = require('joi');
+const Joi = require('@hapi/joi');
 const UUID = require("uuid");
 const server = require('./index');
 
@@ -7,27 +7,7 @@ const server = require('./index');
 const Sqlite3 = require('sqlite3').verbose();
 const db = new Sqlite3.Database(':memory:');
 
-db.run("CREATE TABLE todo (id, state, description, dateAdde)");
-
-const Task = [{
-  "id": UUID.v1(),
-  "state": "INCOMPLETE",
-  "description": "Buy milk",
-  "dateAdded": Date.now()
-},
-{
-  "id": UUID.v1(),
-  "state": "COMPLETE",
-  "description": "Play with doge",
-  "dateAdded": Date.now()
-},
-{
-  "id": UUID.v1(),
-  "state": "COMPLETE",
-  "description": "Limpar ",
-  "dateAdded": Date.now()
-}
-];
+db.run("CREATE TABLE todo (id, state, description, dateAdded)");
 
 function getData(sql) {
 
@@ -47,19 +27,41 @@ function getData(sql) {
 const taskApi = {
   all: {
     // auth: false,
-    handler(request, h) {
+    handler({ query }, request, h) {
 
       try {
-        return getData('SELECT * FROM todo');
+        let result = [];
+        console.log(query);
+        console.log(query.orderBy);
+        let order = '';
+        if (query.orderBy == 'DATE_ADDED')
+          order = 'dateAdded';
+        else
+          order = 'description';
 
+        return new Promise(function (resolve, reject) {
+          db.all('SELECT * FROM todo  WHERE state = ? ORDER BY ? ASC',
+            [query.filter, order],
+            (err, rows) => {
+              if (err) {
+                reject(err);
+              } else {
+                rows.forEach((row) => { result.push(row) });
+                resolve(result);
+              }
+            });
+
+        });
       } catch (err) {
         Boom.badImplementation(err);
       }
-    }
+    },
+    description: 'Array properties',
+    tags: ['api', 'todo']
   },
   create: {
     // auth: 'jwt',
-    async handler(request, h) {
+    handler(request, h) {
       try {
         db.run('INSERT INTO todo VALUES (?, ?, ?, ?)',
           [
@@ -82,65 +84,66 @@ const taskApi = {
       } catch (err) {
         Boom.badImplementation(err);
       }
-    }
-  },
-  get: {
-    auth: false,
-    async handler(request, h) {
-      try {
-        const task = request.params.task;
-
-        return await Task.findOne({
-          _id: task.id
-        });
-
-      } catch (err) {
-        Boom.badImplementation(err);
-      }
-    }
+    },
+    description: 'Create new todo',
+    tags: ['api', 'todo']
   },
   update: {
     // auth: 'jwt',
     // Arrumar
-    async handler(request, h) {
+    handler(request, h) {
       try {
-        objIndex = Task.findIndex((obj => obj.id == request.params.id));
+        sql = '';
+        datas = [];
 
-        //Update object's name property.
-        if (request.payload.state)
-          Task[objIndex].state = request.payload.state
-        if (request.payload.description)
-          Task[objIndex].description = request.payload.description
+        if (request.payload.description) {
+          sql = 'UPDATE todo SET description = COALESCE(?,description) WHERE id = ?';
+          datas = [request.payload.description, request.params.id];
+        } else if (request.payload.state) {
+          sql = 'UPDATE todo SET state = COALESCE(?,state)  WHERE id = ?';
+          datas = [request.payload.state, request.params.id];
+        } else { }
 
-        return Task
+        db.run(sql,
+          datas,
+          (err) => {
+            if (err) {
+              throw err;
+            }
+            return ({ status: 'ok' });
+          });
+
+        return getData('SELECT * FROM todo');
+
+      } catch (err) {
+        Boom.badImplementation(err);
+      }
+    },
+    description: 'Get algebraic remainder',
+    notes: 'Pass two numbers as a & b and returns remainder',
+    tags: ['api'],
+
+  },
+  remove: {
+    // auth: 'jwt',
+    handler(request, h) {
+      try {
+        db.run("DELETE FROM todo WHERE id = ?",
+          [request.params.id],
+          function (err) {
+            if (err) {
+              throw err;
+            }
+            return ({ status: 'ok' });
+          });
+
+        return getData('SELECT * FROM todo');
 
       } catch (err) {
         Boom.badImplementation(err);
       }
     }
   },
-  remove: {
-    // auth: 'jwt',
-    async handler(request, h) {
-      try {
-        const result = [];
-        db.run(
-          'DELETE FROM todo WHERE id = ?',
-          request.params.id,
-          function (err, result) {
-            if (err) {
-              reject(err);
-            }
-            return result
-          });
-
-        return get('SELECT * FROM todo');
-
-      } catch (err) {
-        Boom.badImplementation(err);
-      }
-    }
-  }
 };
 
 module.exports = taskApi;

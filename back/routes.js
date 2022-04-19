@@ -43,7 +43,7 @@ const routes = [
   {
     method: 'DELETE',
     path: '/todo/{id}',
-    options: taskApi.remove
+    options: taskApi.remove,
   },
 ];
 

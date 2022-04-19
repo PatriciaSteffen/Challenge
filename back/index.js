@@ -2,8 +2,6 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const Joi = require('@hapi/joi');
-const Catbox = require('@hapi/catbox');
-const CatboxMemory = require('@hapi/catbox-memory');
 const routes = require('./routes');
 const Boom = require('boom');
 
@@ -25,8 +23,11 @@ const validate = async function (decoded, request) {
 };
 
 
+
 const startServer = async () => {
   try {
+    await server.register([require('vision'), require('inert'), require('lout')]);
+
     await server.register(require('hapi-auth-jwt2'));
 
     server.auth.strategy('jwt', 'jwt', {
