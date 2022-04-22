@@ -3,34 +3,44 @@ import React, { useState, useContext } from 'react'
 
 import { TodoContext } from "../TodoContext";
 import Select from 'react-select';
-
-
 import Todo from "./todo";
-
 
 
 export default function TodoList() {
     const [todos, setTodos] = useContext(TodoContext);
     const [value, setValue] = useState("")
-    const [state, setStates] = useState("")
-    const [orderBy, setOrder] = useState("")
+    let state = ""
+    let order = ""
 
-    const states = [
-        { label: "ALL" },
-        { label: "COMPLETE" },
-        { label: "INCOMPLETE" }
+    const ListStates = [
+        { label: "Select", value: "" },
+        { label: "COMPLETE", value: "COMPLETE" },
+        { label: "INCOMPLETE", value: "INCOMPLETE" },
     ];
 
-    const order = [
-        { label: "DESCRIPTION" },
-        { label: "DATE_ADDED" },
+    const ListOrder = [
+        { label: "Select", value: "" },
+        { label: "DESCRIPTION", value: "description" },
+        { label: "DATE_ADDED", value: "dateAdded" },
     ];
+
+    const getTodo = async () => {
+        return fetch(
+            "http://localhost:5000/todos?filter=" + state + "&orderBy=" + order, {
+            headers: { 'Content-Type': 'application/json' },
+        }).then((res) => res.json())
+            .then((json) => {
+                console.log(json)
+                setTodos(json);
+                return json;
+            });
+    }
 
     async function addTodo(e) {
         e.preventDefault()
         try {
             fetch(
-                "http://localhost:5000/todos?filter=COMPLETE&orderBy=DATE_ADDED", {
+                "http://localhost:5000/todos", {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ description: value })
@@ -44,6 +54,7 @@ export default function TodoList() {
             console.log("Erro:" + err);
         }
         setValue("");
+        getTodo();
     }
 
 
@@ -110,25 +121,50 @@ export default function TodoList() {
                 </div>
             </div>
 
+            <div className="card-content">
+                <div className="level">
+                    <div className="field is-grouped">
+                    </div>
+                    <div className="level-right">
+                        <div className="level-item buttons">
+                            <table className='table'>
+                                <tbody>
+                                    <tr>
+                                        <th>
+                                            <Select
+                                                options={ListStates}
+                                                value={ListStates.value}
+                                                defaultValue={ListStates[0]}
+                                                onChange={(e) => {
+                                                    state = e.value;
+                                                    console.log(state);
+                                                    getTodo();
+                                                }}
+
+                                            /> </th>
+                                        <th>
+                                            <Select
+                                                options={ListOrder}
+                                                value={ListOrder.value}
+                                                defaultValue={ListOrder[0]}
+                                                onChange={(e) => {
+                                                    order = e.value;
+                                                    console.log(order);
+                                                    getTodo();
+                                                }}
+
+                                            />
+                                        </th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <section className="section">
                 <div className="container">
-                    <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'start', }}>
-                        <tr>
-                            <td> State:
-                                <Select
-                                    options={states}
-                                    value={state}
-                                    onChange={(e) => setStates(e.label.value)}
-                                />
-                            </td>
-                            <td>Order:
-                                <Select
-                                    options={order}
-                                    value={orderBy}
-                                    onChange={(e) => setOrder(e.label.value)} /></td>
-                        </tr>
-                    </div>
-
                     {todos.length === 0 &&
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
                             <h1> Nenhuma tarefa cadastrada!</h1>

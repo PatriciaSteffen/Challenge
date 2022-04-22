@@ -7,12 +7,15 @@ export const TodoProvider = (props) => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      await fetch(
-        "http://localhost:5000/todos")
-        .then((res) => res.json())
+      return fetch(
+        "http://localhost:5000/todos?filter=&orderBy=dateAdded", {
+        headers: { 'Content-Type': 'application/json' },
+      }).then((res) => res.json())
         .then((json) => {
+          console.log(json)
           setTodos(json);
-        })
+        });
+
     };
 
     fetchPosts();

@@ -2,13 +2,6 @@ const taskApi = require('./task');
 const UUID = require("uuid");
 
 const routes = [
-  {
-    method: 'GET',
-    path: '/',
-    handler: (request, h) => {
-      return { success: true };
-    }
-  },
   /*
   {
     method: 'POST',
@@ -28,7 +21,7 @@ const routes = [
   {
     method: 'GET',
     path: '/todos',
-    options: taskApi.all
+    options: taskApi.get,
   },
   {
     method: 'PUT',

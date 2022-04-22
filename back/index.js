@@ -26,7 +26,10 @@ const validate = async function (decoded, request) {
 
 const startServer = async () => {
   try {
-    await server.register([require('vision'), require('inert'), require('lout')]);
+    await server.register([
+      require('vision'),
+      require('inert'),
+      require('lout')]);
 
     await server.register(require('hapi-auth-jwt2'));
 

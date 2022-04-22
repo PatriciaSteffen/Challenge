@@ -34,11 +34,11 @@ export default function Todo(props) {
         <div className="card">
             <div className="card-content">
                 <div className="level">
-                    <div class="field is-grouped">
-                        <p class="control">
+                    <div className="field is-grouped">
+                        <p className="control">
                             <input type='checkbox' onClick={props.toggleDone.bind(this, props.todo)} ></input>
                         </p>
-                        <p class="control" className={`title ${props.todo.state === 'INCOMPLETE' ? "" : "has-text-grey-light"}`}>{props.todo.description}</p>
+                        <p className={`control title ${props.todo.state === 'INCOMPLETE' ? "" : "has-text-grey-light"}`}>{props.todo.description}</p>
 
                     </div>
                     <div className="level-right">

@@ -2,6 +2,7 @@ const Boom = require('boom');
 const Joi = require('@hapi/joi');
 const UUID = require("uuid");
 const server = require('./index');
+const { boolean } = require('joi');
 
 
 const Sqlite3 = require('sqlite3').verbose();
@@ -9,39 +10,63 @@ const db = new Sqlite3.Database(':memory:');
 
 db.run("CREATE TABLE todo (id, state, description, dateAdded)");
 
-function getData(sql) {
-
-  let result = [];
+function getData(sql, id) {
   return new Promise(function (resolve, reject) {
-    db.all(sql, [], (err, rows) => {
+    db.all(sql, [id], (err, rows) => {
       if (err) {
         reject(err);
       } else {
-        rows.forEach((row) => { result.push(row) });
-        resolve(result);
+        resolve(rows);
       }
     });
   });
 }
 
 const taskApi = {
-  all: {
+  get: {
     // auth: false,
     handler({ query }, request, h) {
 
       try {
         let result = [];
-        console.log(query);
+        let data = [];
+        let sql = '';
+
+        console.log(query.filter);
         console.log(query.orderBy);
-        let order = '';
-        if (query.orderBy == 'DATE_ADDED')
-          order = 'dateAdded';
-        else
-          order = 'description';
+        if (query.filter == '') {
+          if (query.orderBy == 'description') {
+            sql = 'SELECT * FROM todo ORDER BY description';
+          }
+          else {
+            sql = 'SELECT * FROM todo ORDER BY dateAdded';
+          }
+        }
+        else if (query.filter == 'COMPLETE') {
+          data = [query.filter];
+
+          if (query.orderBy == 'description') {
+            sql = 'SELECT * FROM todo WHERE state = ? ORDER BY description';
+          }
+          else {
+            sql = 'SELECT * FROM todo WHERE state = ? ORDER BY dateAdded';
+          }
+        }
+        else {
+          data = [query.filter];
+          if (query.orderBy == 'description') {
+            sql = 'SELECT * FROM todo WHERE state = ? ORDER BY description';
+          }
+          else {
+            sql = 'SELECT * FROM todo WHERE state = ? ORDER BY dateAdded';
+          }
+        }
+        console.log(data);
+        console.log(sql);
 
         return new Promise(function (resolve, reject) {
-          db.all('SELECT * FROM todo  WHERE state = ? ORDER BY ? ASC',
-            [query.filter, order],
+          db.all(sql,
+            [],
             (err, rows) => {
               if (err) {
                 reject(err);
@@ -56,93 +81,133 @@ const taskApi = {
         Boom.badImplementation(err);
       }
     },
-    description: 'Array properties',
-    tags: ['api', 'todo']
+    description: 'Get items',
+    notes: 'Get items from todo list',
+    tags: ['api'],
   },
   create: {
     // auth: 'jwt',
+    
     handler(request, h) {
-      try {
-        db.run('INSERT INTO todo VALUES (?, ?, ?, ?)',
-          [
-            UUID.v4(),
-            "INCOMPLETE",
-            request.payload.description,
-            Date.now()
-          ],
-          (err) => {
+      const id = UUID.v4();
 
-            if (err) {
-              throw err;
-            }
+      db.run('INSERT INTO todo VALUES (?, ?, ?, ?)',
+        [
+          id,
+          "INCOMPLETE",
+          request.payload.description,
+          Date.now()
+        ],
+        (err) => {
 
-            return ({ status: 'ok' });
-          });
+          if (err) {
+            throw err;
+          }
+        });
 
-        return getData('SELECT * FROM todo');
+      return getData('SELECT * FROM todo WHERE id = ?', id);
 
-      } catch (err) {
-        Boom.badImplementation(err);
-      }
     },
-    description: 'Create new todo',
-    tags: ['api', 'todo']
+    validate: {
+      payload: Joi.object({
+        description: Joi.string().required().note('Text to store in list')
+      })
+    },
+    description: 'Add todo',
+    notes: 'Add an item to the list',
+    tags: ['api'],
   },
   update: {
     // auth: 'jwt',
     // Arrumar
+    /* validate: {
+       payload: Joi.object({
+         state: Joi.string(),
+         description: Joi.string()
+       }).options({ stripUnknown: true }),
+       params: Joi.object({
+         id: Joi.string().required(),
+       }).options({ stripUnknown: true }),
+     },*/
     handler(request, h) {
       try {
-        sql = '';
-        datas = [];
-
-        if (request.payload.description) {
-          sql = 'UPDATE todo SET description = COALESCE(?,description) WHERE id = ?';
-          datas = [request.payload.description, request.params.id];
-        } else if (request.payload.state) {
-          sql = 'UPDATE todo SET state = COALESCE(?,state)  WHERE id = ?';
-          datas = [request.payload.state, request.params.id];
-        } else { }
-
-        db.run(sql,
-          datas,
-          (err) => {
-            if (err) {
-              throw err;
-            }
-            return ({ status: 'ok' });
-          });
-
-        return getData('SELECT * FROM todo');
-
+        return new Promise(function (resolve, reject) {
+          if (request.payload) {
+            db.all('SELECT * FROM todo WHERE id = ?', [request.params.id], (err, rows) => {
+              if (rows.length == 0) {
+                resolve(Boom.notFound());
+              }
+              else {
+                if (rows[0].state == "COMPLETE") {
+                  resolve(Boom.badRequest());
+                }
+                else {
+                  let sql = '';
+                  let datas = [];
+                  if (request.payload.description) {
+                    sql = 'UPDATE todo SET description = COALESCE(?,description) WHERE id = ?';
+                    datas = [request.payload.description, request.params.id];
+                  } else if (request.payload.state) {
+                    sql = 'UPDATE todo SET state = COALESCE(?,state) WHERE id = ?';
+                    datas = [request.payload.state, request.params.id];
+                  }
+                  db.run(sql,
+                    datas,
+                    (err) => {
+                      if (err) {
+                        throw err;
+                      }
+                    });
+                  resolve(getData('SELECT * FROM todo WHERE id = ?', request.params.id));
+                }
+              }
+            });
+          } else {
+            resolve(Boom.badData());
+          }
+        });
       } catch (err) {
         Boom.badImplementation(err);
       }
     },
-    description: 'Get algebraic remainder',
-    notes: 'Pass two numbers as a & b and returns remainder',
+    description: 'Update item',
+    notes: 'Update an item from the todo list',
     tags: ['api'],
 
   },
   remove: {
     // auth: 'jwt',
-    handler(request, h) {
+    /*validate: {
+      params: Joi.object({
+        id: Joi.string().required()
+      }).options({ stripUnknown: true })
+    },*/
+    handler(request, res) {
       try {
-        db.run("DELETE FROM todo WHERE id = ?",
-          [request.params.id],
-          function (err) {
-            if (err) {
-              throw err;
+        return new Promise(function (resolve, reject) {
+          db.all('SELECT * FROM todo WHERE id = ? ', [request.params.id], (err, rows) => {
+            if (rows.length == 0) {
+              resolve(Boom.notFound());
             }
-            return ({ status: 'ok' });
+            else {
+              db.run('DELETE FROM todo WHERE id = ?',
+                [request.params.id],
+                (err) => {
+                  if (err) {
+                    throw err;
+                  }
+                });
+              resolve(null);
+            }
           });
-
-        return getData('SELECT * FROM todo');
-
+        });
       } catch (err) {
         Boom.badImplementation(err);
       }
-    }
+    },
+    description: 'Delete item',
+    notes: 'Delete an item from the todo list',
+    tags: ['api'],
   },
 };
 
