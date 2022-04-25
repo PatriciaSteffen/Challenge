@@ -1,40 +1,61 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 
 
 import { TodoContext } from "../TodoContext";
-import Select from 'react-select';
 import Todo from "./todo";
 
 
 export default function TodoList() {
     const [todos, setTodos] = useContext(TodoContext);
     const [value, setValue] = useState("")
-    let state = ""
-    let order = ""
+    const [state, setState] = useState("")
+    const [order, setOrder] = useState("")
+    const [checked, setChecked] = useState(true)
+    const [count, setCount] = useState(0)
+    const [get, setGet] = useState(false)
 
-    const ListStates = [
-        { label: "Select", value: "" },
-        { label: "COMPLETE", value: "COMPLETE" },
-        { label: "INCOMPLETE", value: "INCOMPLETE" },
-    ];
+    useEffect(() => {
+        if (count === 0)
+            setOrder("dateAdded")
+        else
+            setOrder("description")
 
-    const ListOrder = [
-        { label: "Select", value: "" },
-        { label: "DESCRIPTION", value: "description" },
-        { label: "DATE_ADDED", value: "dateAdded" },
-    ];
+        if (checked)
+            setState("INCOMPLETE")
+        else
+            setState("")
+        if (get)
+            getTodo()
+    }, [checked, count, state, order, get]);
 
-    const getTodo = async () => {
+
+    const changeTitle = () => {
+        setCount((count) => count === 2 ? 0 : count + 1)
+        setGet(true)
+    };
+
+    const changeCompleted = () => {
+        setChecked(!checked)
+        setGet(true)
+    };
+
+    async function getTodo() {
         return fetch(
             "http://localhost:5000/todos?filter=" + state + "&orderBy=" + order, {
             headers: { 'Content-Type': 'application/json' },
         }).then((res) => res.json())
             .then((json) => {
-                console.log(json)
-                setTodos(json);
+                if (count === 2)
+                    setTodos(json.reverse())
+                else
+                    setTodos(json)
+                setGet(false)
                 return json;
             });
     }
+
+
+
 
     async function addTodo(e) {
         e.preventDefault()
@@ -44,12 +65,7 @@ export default function TodoList() {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ description: value })
-            })
-                .then((res) => res.json())
-                .then((json) => {
-                    console.log(json)
-                    setTodos(json);
-                });
+            }).finally(getTodo);
         } catch (err) {
             console.log("Erro:" + err);
         }
@@ -66,12 +82,7 @@ export default function TodoList() {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ state: todo.state === "COMPLETE" ? "INCOMPLETE" : "COMPLETE" })
-            })
-                .then((res) => res.json())
-                .then((json) => {
-                    console.log(json)
-                    setTodos(json);
-                });
+            }).finally(getTodo);
         } catch (err) {
             console.log("Erro:" + err);
         }
@@ -81,11 +92,7 @@ export default function TodoList() {
         fetch(
             "http://localhost:5000/todo/" + todo.id, {
             method: 'DELETE'
-        })
-            .then((res) => res.json())
-            .then((json) => {
-                setTodos(json);
-            });
+        }).finally(getTodo);
     }
     // edit
     const editTodo = (todo, description) => {
@@ -94,13 +101,7 @@ export default function TodoList() {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ description: description })
-        })
-            .then((res) => res.json())
-            .then((json) => {
-                console.log(json)
-                setTodos(json);
-                return json;
-            });
+        }).finally(getTodo);
     }
 
     return (
@@ -121,48 +122,6 @@ export default function TodoList() {
                 </div>
             </div>
 
-            <div className="card-content">
-                <div className="level">
-                    <div className="field is-grouped">
-                    </div>
-                    <div className="level-right">
-                        <div className="level-item buttons">
-                            <table className='table'>
-                                <tbody>
-                                    <tr>
-                                        <th>
-                                            <Select
-                                                options={ListStates}
-                                                value={ListStates.value}
-                                                defaultValue={ListStates[0]}
-                                                onChange={(e) => {
-                                                    state = e.value;
-                                                    console.log(state);
-                                                    getTodo();
-                                                }}
-
-                                            /> </th>
-                                        <th>
-                                            <Select
-                                                options={ListOrder}
-                                                value={ListOrder.value}
-                                                defaultValue={ListOrder[0]}
-                                                onChange={(e) => {
-                                                    order = e.value;
-                                                    console.log(order);
-                                                    getTodo();
-                                                }}
-
-                                            />
-                                        </th>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <section className="section">
                 <div className="container">
                     {todos.length === 0 &&
@@ -171,13 +130,26 @@ export default function TodoList() {
                         </div>
                     }
                     {todos.length > 0 &&
-                        <p className="title" >Tasks</p>
+                        <p onClick={changeTitle} className="title" >Tasks</p>
                     }
                     {todos.map(todo => (
                         <Todo key={todo.id} todo={todo} toggleDone={toggleDone} deleteTodo={deleteTodo} editTodo={editTodo} />
                     ))
                     }
+
                 </div>
+
+
+            </section>
+
+            <section className="section">
+                <label>
+                    <input type="checkbox"
+                        defaultChecked={checked}
+                        onChange={changeCompleted}
+                    />
+                    Hide Completed
+                </label>
             </section>
         </div>
     )

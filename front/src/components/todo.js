@@ -36,7 +36,7 @@ export default function Todo(props) {
                 <div className="level">
                     <div className="field is-grouped">
                         <p className="control">
-                            <input type='checkbox' onClick={props.toggleDone.bind(this, props.todo)} ></input>
+                            <input type='checkbox' defaultChecked={props.todo.state === 'INCOMPLETE' ? false : true} onClick={props.toggleDone.bind(this, props.todo)} disabled={props.todo.state === 'INCOMPLETE' ? false : true}></input>
                         </p>
                         <p className={`control title ${props.todo.state === 'INCOMPLETE' ? "" : "has-text-grey-light"}`}>{props.todo.description}</p>
 
@@ -67,7 +67,7 @@ export default function Todo(props) {
                                     </DialogActions>
                                 </Dialog>
                             </div>
-                            <button onClick={handleClickOpen.bind(this, props.todo)} className="button is-warning has-text-weight-bold">Edit</button>
+                            <button disabled={props.todo.state === 'INCOMPLETE' ? false : true} onClick={handleClickOpen.bind(this, props.todo)} className="button is-warning has-text-weight-bold">Edit</button>
                             <button onClick={props.deleteTodo.bind(this, props.todo)} className="button is-danger has-text-weight-bold">Delete</button>
                         </div>
                     </div>

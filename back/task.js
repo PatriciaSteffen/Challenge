@@ -31,9 +31,7 @@ const taskApi = {
         let result = [];
         let data = [];
         let sql = '';
-
-        console.log(query.filter);
-        console.log(query.orderBy);
+        
         if (query.filter == '') {
           if (query.orderBy == 'description') {
             sql = 'SELECT * FROM todo ORDER BY description';
@@ -61,12 +59,10 @@ const taskApi = {
             sql = 'SELECT * FROM todo WHERE state = ? ORDER BY dateAdded';
           }
         }
-        console.log(data);
-        console.log(sql);
 
         return new Promise(function (resolve, reject) {
           db.all(sql,
-            [],
+            data,
             (err, rows) => {
               if (err) {
                 reject(err);
@@ -87,7 +83,7 @@ const taskApi = {
   },
   create: {
     // auth: 'jwt',
-    
+
     handler(request, h) {
       const id = UUID.v4();
 
