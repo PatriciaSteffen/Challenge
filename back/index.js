@@ -1,7 +1,4 @@
-require('dotenv').config();
-
 const Hapi = require('@hapi/hapi');
-const Joi = require('@hapi/joi');
 const routes = require('./routes');
 const Boom = require('boom');
 
@@ -12,34 +9,30 @@ const server = Hapi.server({
   routes: { cors: true },
 });
 
-
-const validate = async function (decoded, request) {
-  console.log('running validate...');
-
-  console.log(decoded);
-  console.log(request);
-
-  return { isValid: true };
-};
-
-
-
-const startServer = async () => {
+const init = async () => {
   try {
     await server.register([
       require('vision'),
       require('inert'),
-      require('lout')]);
-
-    await server.register(require('hapi-auth-jwt2'));
-
-    server.auth.strategy('jwt', 'jwt', {
-      key: process.env.SECRET_KEY,
-      validate,
-      verifyOptions: {
-        algorithms: ['HS256']
+      {
+        plugin: require('hapi-swaggered'),
+        options: {
+          info: {
+            title: 'Challenge API Documentation',
+            version: '1.0.0'
+          }
+        }
+      },
+      {
+        plugin: require('hapi-swaggered-ui'),
+        options: {
+          path: '/docs',
+          swaggerOptions: {
+            validatorUrl: null
+          }
+        }
       }
-    });
+    ]);
 
     routes.forEach((route) => {
       server.route(route);
@@ -55,6 +48,6 @@ const startServer = async () => {
   }
 };
 
-startServer();
+init();
 
 module.exports = server;
