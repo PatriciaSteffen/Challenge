@@ -25,7 +25,8 @@ export default function TodoList() {
         else
             setState("")
         if (get)
-            getTodo()
+            getTodo();
+
     }, [checked, count, state, order, get]);
 
 
@@ -53,9 +54,6 @@ export default function TodoList() {
                 return json;
             });
     }
-
-
-
 
     async function addTodo(e) {
         e.preventDefault()
@@ -108,7 +106,6 @@ export default function TodoList() {
         <div>
             <div className="hero is-info">
                 <div className="hero-body has-text-centered">
-
                     <form onSubmit={addTodo} className="field has-addons">
                         <p className="control is-expanded">
                             <input value={value} type="text" onChange={(e) => setValue(e.target.value)} className="input" />
@@ -124,13 +121,11 @@ export default function TodoList() {
 
             <section className="section">
                 <div className="container">
+                    <p onClick={changeTitle} className="title" >Tasks</p>
                     {todos.length === 0 &&
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
                             <h1> Nenhuma tarefa cadastrada!</h1>
                         </div>
-                    }
-                    {todos.length > 0 &&
-                        <p onClick={changeTitle} className="title" >Tasks</p>
                     }
                     {todos.map(todo => (
                         <Todo key={todo.id} todo={todo} toggleDone={toggleDone} deleteTodo={deleteTodo} editTodo={editTodo} />

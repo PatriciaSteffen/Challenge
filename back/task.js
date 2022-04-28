@@ -1,14 +1,12 @@
 const Boom = require('boom');
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const UUID = require("uuid");
-const server = require('./index');
-const { boolean } = require('joi');
-
 
 const Sqlite3 = require('sqlite3').verbose();
 const db = new Sqlite3.Database(':memory:');
 
 db.run("CREATE TABLE todo (id, state, description, dateAdded)");
+db.run("CREATE TABLE users (id, name, surname, password, dateAdded)");
 
 function getData(sql, id) {
   return new Promise(function (resolve, reject) {
@@ -22,16 +20,15 @@ function getData(sql, id) {
   });
 }
 
+
 const taskApi = {
   get: {
-    // auth: false,
-    handler({ query }, request, h) {
-
+    handler({ query }) {
       try {
         let result = [];
         let data = [];
         let sql = '';
-        
+
         if (query.filter == '') {
           if (query.orderBy == 'description') {
             sql = 'SELECT * FROM todo ORDER BY description';
@@ -77,13 +74,18 @@ const taskApi = {
         Boom.badImplementation(err);
       }
     },
+    validate: {
+      query: Joi.object({
+        filter: Joi.string().optional().allow(""),
+        orderBy: Joi.string().optional().allow(""),
+      }),
+    },
     description: 'Get items',
     notes: 'Get items from todo list',
     tags: ['api'],
+
   },
   create: {
-    // auth: 'jwt',
-
     handler(request, h) {
       const id = UUID.v4();
 
@@ -106,7 +108,7 @@ const taskApi = {
     },
     validate: {
       payload: Joi.object({
-        description: Joi.string().required().note('Text to store in list')
+        description: Joi.string().required()
       })
     },
     description: 'Add todo',
@@ -114,17 +116,6 @@ const taskApi = {
     tags: ['api'],
   },
   update: {
-    // auth: 'jwt',
-    // Arrumar
-    /* validate: {
-       payload: Joi.object({
-         state: Joi.string(),
-         description: Joi.string()
-       }).options({ stripUnknown: true }),
-       params: Joi.object({
-         id: Joi.string().required(),
-       }).options({ stripUnknown: true }),
-     },*/
     handler(request, h) {
       try {
         return new Promise(function (resolve, reject) {
@@ -166,18 +157,19 @@ const taskApi = {
         Boom.badImplementation(err);
       }
     },
+    validate: {
+      params: Joi.object({
+        description: Joi.string().optional().allow(""),
+        state: Joi.string().optional().allow(""),
+        id: Joi.string().required()
+      }),
+    },
     description: 'Update item',
     notes: 'Update an item from the todo list',
     tags: ['api'],
 
   },
   remove: {
-    // auth: 'jwt',
-    /*validate: {
-      params: Joi.object({
-        id: Joi.string().required()
-      }).options({ stripUnknown: true })
-    },*/
     handler(request, res) {
       try {
         return new Promise(function (resolve, reject) {
@@ -201,9 +193,15 @@ const taskApi = {
         Boom.badImplementation(err);
       }
     },
+    validate: {
+      params: Joi.object({
+        id: Joi.string().required()
+      }),
+    },
     description: 'Delete item',
     notes: 'Delete an item from the todo list',
     tags: ['api'],
+
   },
 };
 

@@ -1,14 +1,11 @@
-import React from 'react';
-
-import { TodoProvider } from "./TodoContext";
-
-import TodoList from "./components/todolist";
+import { BrowserRouter } from "react-router-dom";
+import Views from "./Views";
 
 function App() {
   return (
-    <TodoProvider>
-      <TodoList/>
-    </TodoProvider>
+    <BrowserRouter>
+      <Views />
+    </BrowserRouter>
   );
 }
 

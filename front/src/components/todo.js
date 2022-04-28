@@ -27,7 +27,6 @@ export default function Todo(props) {
         props.editTodo(props.todo, description).then((e) => {
             handleClose();
         });
-
     };
 
     return (
@@ -38,7 +37,7 @@ export default function Todo(props) {
                         <p className="control">
                             <input type='checkbox' defaultChecked={props.todo.state === 'INCOMPLETE' ? false : true} onClick={props.toggleDone.bind(this, props.todo)} disabled={props.todo.state === 'INCOMPLETE' ? false : true}></input>
                         </p>
-                        <p className={`control title ${props.todo.state === 'INCOMPLETE' ? "" : "has-text-grey-light"}`}>{props.todo.description}</p>
+                        <p className={`control ${props.todo.state === 'INCOMPLETE' ? "" : "has-text-grey-light"}`}>{props.todo.description}</p>
 
                     </div>
                     <div className="level-right">
